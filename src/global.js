@@ -14,6 +14,9 @@ fetch('https://raw.githubusercontent.com/ydarissep/dex-core/main/index.html').th
     document.getElementById("footerName").innerText = "YAEEH idk something\nYdarissep Pokedex"
 
 
+    document.getElementById("speciesPanelTMHMTable").getElementsByTagName("caption")[0].innerText = "Teachable"
+    document.getElementById("speciesPanelTutorTable").classList.add("hide")
+
 
     await fetch("https://raw.githubusercontent.com/ydarissep/dex-core/main/src/global.js").then(async response => {
         return response.text()
