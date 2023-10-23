@@ -52,7 +52,7 @@ function regexMovesDescription(textMovesDescription, moves){
 
 function regexMoves(textMoves, moves){
     const lines = textMoves.split("\n")
-    let move = null, change = false, rebalanced = false
+    let move = null, change = false
 
     lines.forEach(line => {
 
@@ -66,10 +66,7 @@ function regexMoves(textMoves, moves){
             moves[move]["description"] = []
             moves[move]["ingameName"] = sanitizeString(move)
         }
-        if(line.includes("REBALANCED_VERSION"))
-            rebalanced = true
-        else if(line.includes("else") && rebalanced === true){
-            rebalanced = false
+        else if(line.includes("else")){
             change = true
         }
         else if(line.includes("endif") && change === true)
@@ -140,12 +137,15 @@ function regexMoves(textMoves, moves){
                 moves[move] = setMove(moves[move], change, "target", target)
             }
         }
-        else if(line.includes(".flags")){
-            const matchFlags = line.match(/FLAG_\w+/ig)
+        else if(/..*?= *TRUE/i.test(line)){
+            const matchFlags = line.match(/.(\w+).*?= *TRUE/i)
             if(matchFlags){
-                const flags = matchFlags
+                const flag = matchFlags[1].replace(/([A-Z])/g, " $1").replace(/(\d+)/g, " $1").trim()
 
-                moves[move] = setMove(moves[move], change, "flags", flags)
+                if(!moves[move]["flags"]){
+                    moves[move]["flags"] = []
+                }
+                moves[move]["flags"].push(flag)
             }
         }
         else if(line.includes(".priority")){
@@ -211,7 +211,7 @@ function normalizeMoves(moves){
             moves[move]["target"] = ""
 
         if(moves[move]["flags"] === undefined)
-            moves[move]["flags"] = [""]
+            moves[move]["flags"] = []
 
         if(moves[move]["priority"] === undefined)
             moves[move]["priority"] = 0

@@ -44,7 +44,7 @@ function regexSpecies(textSpecies, species){
 function regexBaseStats(textBaseStats, species){
     let lines = textBaseStats.split("\n")
 
-    const regex = /baseHP|baseAttack|baseDefense|baseSpeed|baseSpAttack|baseSpDefense|types|itemCommon|itemRare|eggGroup1|eggGroup2|abilities|catchRate/
+    const regex = /baseHP|baseAttack|baseDefense|baseSpeed|baseSpAttack|baseSpDefense|types|itemCommon|itemRare|eggGroups|abilities|catchRate/
     let stop = false, value, name, defines = {}, define = "", keep = false, argument = [], argumentDefine = []
 
     mainLoop: for(let i = 0; i < lines.length; i++){
@@ -161,6 +161,18 @@ function regexBaseStats(textBaseStats, species){
                             }
                             if(value[1]){
                                 species[name]["type2"] = value[1]
+                            }
+                        }
+                        continue mainLoop
+                    }
+                    else if(match === "eggGroups"){
+                        if(!stop){
+                            value = line.match(/EGG_GROUP_\w+/ig)
+                            if(value[0]){
+                                species[name]["eggGroup1"] = value[0]
+                            }
+                            if(value[1]){
+                                species[name]["eggGroup2"] = value[1]
                             }
                         }
                         continue mainLoop
