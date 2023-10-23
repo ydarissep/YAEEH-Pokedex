@@ -678,7 +678,12 @@ function regexSprite(textSprite, conversionTable, species){
                     if(path === "cherrim")
                         path = "cherrim/normal"
                     let url = `https://raw.githubusercontent.com/${repo}/graphics/pokemon/${path}/anim_front.png`
+                    for(let i = 0; i < conversionTable[conversion].length; i++){
+                        species[speciesArray[i]]["sprite"] = url
+                        spriteRemoveBgReturnBase64(speciesArray[i], species)
+                    }
 
+                    /*
                     fetch(url).then(response => {
                         if(!response.ok){   
                             url = `https://raw.githubusercontent.com/${repo}/graphics/pokemon/${path}/front.png`
@@ -694,6 +699,7 @@ function regexSprite(textSprite, conversionTable, species){
                             }
                         }
                     })
+                    */
                 }
             }
         }
