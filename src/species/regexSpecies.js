@@ -672,34 +672,14 @@ function regexSprite(textSprite, conversionTable, species){
             if(conversionTableString.includes(conversion)){
                 const speciesArray = conversionTable[conversion]
 
-                const matchPath = line.match(/graphics\/pokemon\/(\w+\/\w+\/\w+\/\w+\/\w+|\w+\/\w+\/\w+\/\w+|\w+\/\w+\/\w+|\w+\/\w+|\w+)\//i) // ¯\_(ツ)_/¯
+                const matchPath = line.match(/graphics\/pokemon\/(.*?)\./i)
                 if(matchPath){
                     let path = matchPath[1]
-                    if(path === "cherrim")
-                        path = "cherrim/normal"
-                    let url = `https://raw.githubusercontent.com/${repo}/graphics/pokemon/${path}/anim_front.png`
+                    let url = `https://raw.githubusercontent.com/${repo}/graphics/pokemon/${path}.png`
                     for(let i = 0; i < conversionTable[conversion].length; i++){
                         species[speciesArray[i]]["sprite"] = url
                         spriteRemoveBgReturnBase64(speciesArray[i], species)
                     }
-
-                    /*
-                    fetch(url).then(response => {
-                        if(!response.ok){   
-                            url = `https://raw.githubusercontent.com/${repo}/graphics/pokemon/${path}/front.png`
-                            for(let i = 0; i < conversionTable[conversion].length; i++){
-                                species[speciesArray[i]]["sprite"] = url
-                                spriteRemoveBgReturnBase64(speciesArray[i], species)
-                            }
-                        }
-                        else{
-                            for(let i = 0; i < conversionTable[conversion].length; i++){
-                                species[speciesArray[i]]["sprite"] = url
-                                spriteRemoveBgReturnBase64(speciesArray[i], species)
-                            }
-                        }
-                    })
-                    */
                 }
             }
         }
