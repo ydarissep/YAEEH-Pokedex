@@ -16,20 +16,22 @@ function regexSpecies(textSpecies, species){
             matchInt = line.match(/\d+/g)
             if(matchInt){
                 ID = parseInt(matchInt[matchInt.length-1])
-
-
-
-                species[name] = {}
-                species[name]["name"] = name
-
-
-                if(Number.isInteger(formsStart))
-                    species[name]["ID"] = ID+formsStart
-                else
-                    species[name]["ID"] = ID
             }
+            else{
+                ID++
+            }
+
+            species[name] = {}
+            species[name]["name"] = name
+
+
+            if(Number.isInteger(formsStart))
+                species[name]["ID"] = ID+formsStart
+            else
+                species[name]["ID"] = ID
         }
     })
+    console.log(species)
     return species
 }
 
