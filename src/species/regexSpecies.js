@@ -31,7 +31,6 @@ function regexSpecies(textSpecies, species){
                 species[name]["ID"] = ID
         }
     })
-    console.log(species)
     return species
 }
 
