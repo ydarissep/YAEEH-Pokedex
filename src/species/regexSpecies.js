@@ -689,7 +689,6 @@ function regexSprite(textSprite, conversionTable, species){
                 if(matchPath){
                     let path = matchPath[1]
                     let url = `https://raw.githubusercontent.com/${repo}/graphics/pokemon/${path}.png`
-                    console.log(conversionTable, conversion)
                     for(let i = 0; i < conversionTable[conversion].length; i++){
                         species[speciesArray[i]]["sprite"] = url
                         spriteRemoveBgReturnBase64(speciesArray[i], species)
