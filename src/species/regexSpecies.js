@@ -670,6 +670,11 @@ function getSpriteConversionTable(textFrontPicTable, species){
             }
         }
     })
+
+    if(!conversionTable["gMonFrontPic_Alcremie"]){
+        conversionTable["gMonFrontPic_Alcremie"] = ["SPECIES_ALCREMIE"]
+    }
+
     return conversionTable
 }
 
