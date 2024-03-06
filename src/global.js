@@ -1,4 +1,4 @@
-window.repo = "PCG06/pokeemerald/YAEEH"
+window.repo = "PCG06/pokeyaeeh/YAEEH"
 window.checkUpdate = "4 YAEEH"
 
 
