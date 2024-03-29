@@ -19,8 +19,8 @@ async function getTrainers(trainers){
 async function buildTrainersObj(){
     let trainers = {}
 
-    //trainers = await getScripts(trainers)
-    //trainers = await getTrainers(trainers)
+    trainers = await getScripts(trainers)
+    trainers = await getTrainers(trainers)
     
     trainers = await bugFixTrainers(trainers)
 
@@ -74,7 +74,7 @@ async function fetchTrainersObj(){
                 sprites[sprite] = LZString.decompressFromUTF16(localStorage.getItem(sprite))
                 if(sprites[sprite].length < 500){
                     localStorage.removeItem(sprite)
-                    spriteRemoveBgReturnBase64(sprite, `https://raw.githubusercontent.com/${repo}/graphics/trainers/front_pics/${sprite.replace(/^TRAINER_PIC_/, "").toLowerCase()}_front_pic.png`)
+                    spriteRemoveBgReturnBase64(sprite, `https://raw.githubusercontent.com/${repo}/graphics/trainers/front_pics/${sprite.replace(/^TRAINER_PIC_/, "").toLowerCase()}.png`)
                 }
             }
         })
@@ -87,7 +87,7 @@ async function fetchTrainersObj(){
 
 
 function getTrainerSpriteSrc(trainerSprite){
-    const url = `https://raw.githubusercontent.com/${repo}/graphics/trainers/front_pics/${trainerSprite.replace(/^TRAINER_PIC_/, "").toLowerCase()}_front_pic.png`
+    const url = `https://raw.githubusercontent.com/${repo}/graphics/trainers/front_pics/${trainerSprite.replace(/^TRAINER_PIC_/, "").toLowerCase()}.png`
     if(sprites[trainerSprite]){
         if(sprites[trainerSprite].length < 500){
             localStorage.removeItem(trainerSprite)
