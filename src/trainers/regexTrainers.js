@@ -205,12 +205,14 @@ async function regexTrainersParties(textTrainersParties, [trainers, conversionTa
                     const matchIVs = line.match(/\d+/g)
                     if(matchIVs){
                         mon["ivs"] = matchIVs
+                        mon["ivs"].push(mon["ivs"].splice(3, 1)[0])
                     }
                 }
                 else if(/.ev *=/i.test(line)){
                     const matchEVs = line.match(/\d+/g)
                     if(matchEVs){
                         mon["evs"] = matchEVs
+                        mon["evs"].push(mon["evs"].splice(3, 1)[0])
                     }
                 }
                 else if(/.nature *=/i.test(line)){
