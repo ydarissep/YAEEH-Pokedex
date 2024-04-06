@@ -1,12 +1,12 @@
 async function regexScripts(textScripts, trainers){
-    const scripts = textScripts.match(/data\/maps\/.*\/scripts.inc/ig)
+    const scripts = textScripts.match(/data\/maps\/.*\/scripts.\w+/ig)
 
     for(let i = 0, j = scripts.length; i < j; i++){
-        fetch(`https://raw.githubusercontent.com/${repo}/${scripts[i]}`)
+        fetch(`https://raw.githubusercontent.com/${repo}/${scripts[i].replace(/.inc$/, ".pory")}`)
         .then(promises => {
             promises.text()
             .then(text => {
-                const zone = scripts[i].match(/data\/maps\/(.*)\/scripts.inc/i)[1].replaceAll("_", "").replace(/([A-Z])/g, " $1").replace(/(\d+)/g, " $1").trim()
+                const zone = scripts[i].match(/data\/maps\/(.*)\/scripts.\w+/i)[1].replaceAll("_", "").replace(/([A-Z])/g, " $1").replace(/(\d+)/g, " $1").trim()
                 const trainersFromScript = Array.from(new Set(text.match(/TRAINER_\w+/g)))
 
                 for(let k = 0; k < trainersFromScript.length; k++){
