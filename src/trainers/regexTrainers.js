@@ -43,7 +43,7 @@ async function regexTrainers(textTrainers, trainers){
     const textRematch = await rawRematch.text()
 
     let trainerToRematch = {}
-    const rematches = textRematch.match(/REMATCH\(TRAINER_\w+, TRAINER_\w+, TRAINER_\w+, TRAINER_\w+/ig)
+    const rematches = textRematch.match(/REMATCH\(TRAINER_\w+.*TRAINER_\w+./ig)
     rematches.forEach(rematch => {
         const trainerMatch = rematch.match(/TRAINER_\w+/ig)
         for(let i = 1; i < trainerMatch.length; i++){
