@@ -85,38 +85,38 @@ function regexBaseStats(textBaseStats, species){
                 }
             }
             else{
-                const matchSpecies = line.match(/\[(SPECIES_\w+)\] *=(.*)/i)
+                const matchSpecies = line.match(/\[(SPECIES_\w+)\]\s*=/i)
                 if(matchSpecies){
                     name = matchSpecies[1]
                     stop = false
                     argument = []
                     argumentDefine = []
-
-                    if(matchSpecies[2]){
-                        matchDefine = matchSpecies[2].replaceAll(",", "").trim().match(/(\w+)(.*)/)
-                        define = matchDefine[1]
-                        if(matchDefine[2]){
-                            argument = matchDefine[2].match(/\w+/g)
+                }
+                const matchSpeciesInfo = line.match(/\w+_INFO(?:\(.*?\))?/i)
+                if(matchSpeciesInfo && !/\\|#define/i.test(line)){
+                    matchDefine = matchSpeciesInfo[0].replaceAll(",", "").trim().match(/(\w+)(.*)/)
+                    define = matchDefine[1]
+                    if(matchDefine[2]){
+                        argument = matchDefine[2].match(/\w+/g)
+                    }
+                    Object.keys(defines).forEach(testDefine => {
+                        testDefine = testDefine.match(/(\w+)(.*)/)
+                        if(testDefine[1] && testDefine[1] === define){
+                            define = testDefine[0]
+                            if(testDefine[2]){
+                                argumentDefine = testDefine[2].match(/\w+/g)
+                            }
                         }
-                        Object.keys(defines).forEach(testDefine => {
-                            testDefine = testDefine.match(/(\w+)(.*)/)
-                            if(testDefine[1] && testDefine[1] === define){
-                                define = testDefine[0]
-                                if(testDefine[2]){
-                                    argumentDefine = testDefine[2].match(/\w+/g)
+                    })
+                    if(define in defines){
+                        for(let j = 0; j < defines[define].length; j++){
+                            let newLine = defines[define][j].replaceAll(" ", "").replaceAll("}", ",")
+                            if(argument){
+                                for(let k = 0; k < argument.length; k++){
+                                    newLine = newLine.replace(`${argumentDefine[k]},`, `${argument[k]},`)
                                 }
                             }
-                        })
-                        if(define in defines){
-                            for(let j = 0; j < defines[define].length; j++){
-                                let newLine = defines[define][j].replaceAll(" ", "").replaceAll("}", ",")
-                                if(argument){
-                                    for(let k = 0; k < argument.length; k++){
-                                        newLine = newLine.replace(`${argumentDefine[k]},`, `${argument[k]},`)
-                                    }
-                                }
-                                lines.splice(i+1, 0, newLine)
-                            }
+                            lines.splice(i+1, 0, newLine)
                         }
                     }
                 }
@@ -267,38 +267,38 @@ function regexChanges(textChanges, species){
                 }
             }
             else{
-                const matchSpecies = line.match(/\[(SPECIES_\w+)\] *=(.*)/i)
+                const matchSpecies = line.match(/\[(SPECIES_\w+)\]\s*=/i)
                 if(matchSpecies){
                     name = matchSpecies[1]
                     stop = false
                     argument = []
                     argumentDefine = []
-
-                    if(matchSpecies[2]){
-                        matchDefine = matchSpecies[2].replaceAll(",", "").trim().match(/(\w+)(.*)/)
-                        define = matchDefine[1]
-                        if(matchDefine[2]){
-                            argument = matchDefine[2].match(/\w+/g)
+                }
+                const matchSpeciesInfo = line.match(/\w+_INFO(?:\(.*?\))?/i)
+                if(matchSpeciesInfo && !/\\|#define/i.test(line)){
+                    matchDefine = matchSpeciesInfo[0].replaceAll(",", "").trim().match(/(\w+)(.*)/)
+                    define = matchDefine[1]
+                    if(matchDefine[2]){
+                        argument = matchDefine[2].match(/\w+/g)
+                    }
+                    Object.keys(defines).forEach(testDefine => {
+                        testDefine = testDefine.match(/(\w+)(.*)/)
+                        if(testDefine[1] && testDefine[1] === define){
+                            define = testDefine[0]
+                            if(testDefine[2]){
+                                argumentDefine = testDefine[2].match(/\w+/g)
+                            }
                         }
-                        Object.keys(defines).forEach(testDefine => {
-                            testDefine = testDefine.match(/(\w+)(.*)/)
-                            if(testDefine[1] && testDefine[1] === define){
-                                define = testDefine[0]
-                                if(testDefine[2]){
-                                    argumentDefine = testDefine[2].match(/\w+/g)
+                    })
+                    if(define in defines){
+                        for(let j = 0; j < defines[define].length; j++){
+                            let newLine = defines[define][j].replaceAll(" ", "").replaceAll("}", ",")
+                            if(argument){
+                                for(let k = 0; k < argument.length; k++){
+                                    newLine = newLine.replace(`${argumentDefine[k]},`, `${argument[k]},`)
                                 }
                             }
-                        })
-                        if(define in defines){
-                            for(let j = 0; j < defines[define].length; j++){
-                                let newLine = defines[define][j].replaceAll(" ", "").replaceAll("}", ",")
-                                if(argument){
-                                    for(let k = 0; k < argument.length; k++){
-                                        newLine = newLine.replace(`${argumentDefine[k]},`, `${argument[k]},`)
-                                    }
-                                }   
-                                lines.splice(i+1, 0, newLine)
-                            }
+                            lines.splice(i+1, 0, newLine)
                         }
                     }
                 }
