@@ -137,10 +137,6 @@ async function regexTrainers(textTrainers){
 
 
 async function regexTrainersParties(textTrainersParties, [conversionTable, trainerToZone]){
-
-    
-
-
     const lines = textTrainersParties.split("\n")
     let comment = false, trainer = null, zone = null, difficulty = "Normal", mon = {}
 
