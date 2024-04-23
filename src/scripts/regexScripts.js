@@ -1,6 +1,6 @@
-async function regexScripts(textScripts/*, tradeText, specialFunctions*/){
-    //const tradeArray = tradeText.match(/INGAME_TRADE_\w+.*?.species.*?SPECIES_\w+/igs)
-    //const regexSpecialFunctions = new RegExp(Object.keys(specialFunctions).toString().replaceAll(",", "|"), "g")
+async function regexScripts(textScripts, tradeText, specialFunctions){
+    const tradeArray = tradeText.match(/INGAME_TRADE_\w+.*?.species.*?SPECIES_\w+/igs)
+    const regexSpecialFunctions = new RegExp(Object.keys(specialFunctions).toString().replaceAll(",", "|"), "g")
 
     let scripts = textScripts.match(/data\/.*.inc/ig)
     for(let i = 0, j = scripts.length; i < j; i++){
@@ -11,7 +11,7 @@ async function regexScripts(textScripts/*, tradeText, specialFunctions*/){
         .then(promises => {
             promises.text()
             .then(text => {
-                regexScript(text, scripts[i]/*, tradeArray, specialFunctions, regexSpecialFunctions*/)
+                regexScript(text, scripts[i], tradeArray, specialFunctions, regexSpecialFunctions)
             })
         })
     }
@@ -455,17 +455,22 @@ async function regexItemIcon(textItemIconTable, textItemsIcon){
             iconToItem[itemIcon].forEach(itemName => {
                 if(itemName in items){
                     items[itemName]["url"] = `https://raw.githubusercontent.com/${repo}/${itemPath}`
-                    if(/gItemIcon_(?:HM|TM)$/.test(itemIcon)){
-                        const moveMatch = itemName.match(/ITEM_(?:HM\d+_|TM\d+_)(\w+)/)
-                        if(moveMatch){
-                            const move = `MOVE_${moveMatch[1]}`
-                            if(move in moves){
-                                items[itemName]["url"] = `https://raw.githubusercontent.com/ydarissep/dex-core/main/sprites/TM_${moves[move]["type"]}.png`
-                            }
-                        }
-                    }
                 }
            })
+        }
+    })
+
+    Object.keys(items).forEach(itemName => {
+        if(items[itemName]["url"] === ""){
+            if(iconToItem["gItemIcon_TM"].includes(`ITEM_${items[itemName]["ingameName"]}`) || iconToItem["gItemIcon_HM"].includes(`ITEM_${items[itemName]["ingameName"]}`)){
+                const moveMatch = itemName.match(/ITEM_(?:HM\d*_|TM\d*_)(\w+)/)
+                if(moveMatch){
+                    const move = `MOVE_${moveMatch[1]}`
+                    if(move in moves){
+                        items[itemName]["url"] = `https://raw.githubusercontent.com/ydarissep/dex-core/main/sprites/TM_${moves[move]["type"]}.png`
+                    }
+                }
+            }
         }
     })
 }
@@ -569,6 +574,54 @@ async function regexHiddenItems(textFlags){
 
 
 
+
+async function regexTutorItems(textTutor){
+    const lines = textTutor.split("\n")
+    let scriptName = null, move = null, zone = null
+
+    lines.forEach(line => {
+        line = line.trim()
+
+        if(/::$/.test(line)){
+            scriptName = line
+        }
+        else if(line === "end"){
+            if(scriptName && move && zone){
+                const tutorName = move.replace("MOVE_", "ITEM_TUTOR_")
+                initItem(tutorName)
+                if(!items[tutorName]["locations"]["Tutor"]){
+                    items[tutorName]["locations"]["Tutor"] = []
+                }
+                items[tutorName]["url"] = "https://raw.githubusercontent.com/ydarissep/dex-core/main/src/locations/sprites/Tutor.png"
+                if(move in moves){
+                    items[tutorName]["description"] = moves[move]["description"].join("")
+                    items[tutorName]["pocket"] = "POCKET_TUTOR"
+                    items[tutorName]["url"] = `https://raw.githubusercontent.com/ydarissep/dex-core/main/sprites/TM_${moves[move]["type"]}.png`
+                }
+                items[tutorName]["locations"]["Tutor"].push(zone)
+            }
+
+            scriptName = null
+            move = null
+            zone = null
+        }
+        else if(/MOVE_/.test(line)){
+            move = line.match(/MOVE_\w+/)[0]
+        }
+        else if(scriptName && /call MoveTutor_EventScript_OpenPartyMenu/i.test(line)){
+            zone = scriptName.match(/(\w+)_EventScript/i)[1].replaceAll("_", " ").replace(/([A-Z])/g, " $1").replace(/(\d+)/g, " $1").trim()
+        }
+    })
+}
+
+
+
+
+
+
+
+
+
 function initTrainer(trainers, trainer, zone){
     if(!trainers[zone]){
         trainers[zone] = {}
@@ -621,7 +674,7 @@ function initScriptsLocations(speciesName, zone, method){
 
 
 
-function regexScript(text, scriptPath/*, tradeArray, specialFunctions, regexSpecialFunctions*/){
+function regexScript(text, scriptPath, tradeArray, specialFunctions, regexSpecialFunctions){
     let map = false
     let zone = sanitizeString(scriptPath.match(/(\w+).\w+/i)[1].replaceAll("_", " ").replace(/([A-Z])/g, " $1").replace(/(\d+)/g, " $1").trim())
 
@@ -636,7 +689,6 @@ function regexScript(text, scriptPath/*, tradeArray, specialFunctions, regexSpec
             initTrainer(trainers, trainersFromScript[k], zone)
         }
 
-        /*
         if(/CreateEventLegalEnemyMon/i.test(text)){
             const speciesEvent = Array.from(new Set(text.match(/SPECIES_\w+/g)))
             for(let k = 0; k < speciesEvent.length; k++){
@@ -660,25 +712,6 @@ function regexScript(text, scriptPath/*, tradeArray, specialFunctions, regexSpec
                 }
             })
         }
-        */
-    }
-
-    /*
-    const tutorMatch = Array.from(new Set(text.match(/TUTOR_MOVE_\w+/g)))
-    for(let k = 0; k < tutorMatch.length; k++){
-        const tutorName = `ITEM_${tutorMatch[k].replace("MOVE_", "")}`
-        const move = tutorMatch[k].match(/TUTOR_(MOVE_\w+)/)[1]
-        initItem(tutorName)
-        if(!items[tutorName]["locations"]["Tutor"]){
-            items[tutorName]["locations"]["Tutor"] = []
-        }
-        items[tutorName]["url"] = "https://raw.githubusercontent.com/ydarissep/dex-core/main/src/locations/sprites/Tutor.png"
-        if(move in moves){
-            items[tutorName]["description"] = moves[move]["description"].join("")
-            items[tutorName]["pocket"] = "POCKET_TUTOR"
-            items[tutorName]["url"] = `https://raw.githubusercontent.com/ydarissep/dex-core/main/sprites/TM_${moves[move]["type"]}.png`
-        }
-        items[tutorName]["locations"]["Tutor"].push(zone)
     }
     
     const giveitemMatch = Array.from(new Set(text.match(/giveitem\s+ITEM_\w+/g)))
@@ -698,9 +731,7 @@ function regexScript(text, scriptPath/*, tradeArray, specialFunctions, regexSpec
         }
         items[itemName]["locations"]["Buy"].push(zone)
     }
-    */
 
-    /*
     if(/\s+givemon\s+|\s+giveegg\s+/i.test(text)){
         const giveMatch = Array.from(new Set(text.match(/givemon\s*SPECIES_\w+|giveegg\s*SPECIES_\w+/g)))
         for(let k = 0; k < giveMatch.length; k++){
@@ -714,5 +745,4 @@ function regexScript(text, scriptPath/*, tradeArray, specialFunctions, regexSpec
             })
         }
     }
-    */
 }

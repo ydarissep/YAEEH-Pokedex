@@ -3,7 +3,6 @@ async function getScripts(){
     const rawScripts = await fetch(`https://raw.githubusercontent.com/${repo}/data/event_scripts.s`)
     const textScripts = await rawScripts.text()
 
-    /*
     const rawTrade = await fetch(`https://raw.githubusercontent.com/${repo}/src/data/trade.h`)
     const tradeText = await rawTrade.text()
 
@@ -11,9 +10,8 @@ async function getScripts(){
     const textSpecials = await rawSpecials.text()
 
     await getItemBallSripts(textScripts)
-    */
 
-    await regexScripts(textScripts/*, tradeText, await regexSpecialsFunctions(textSpecials)*/)
+    await regexScripts(textScripts, tradeText, await regexSpecialsFunctions(textSpecials))
 }
 
 async function getItems(){
@@ -41,6 +39,13 @@ async function getHiddenItems(){
     const textFlags = await rawFlags.text()
 
     await regexHiddenItems(textFlags)
+}
+
+async function getTutorItems(){
+    const rawTutor = await fetch(`https://raw.githubusercontent.com/${repo}/data/scripts/move_tutors.inc`)
+    const textTutor = await rawTutor.text()
+
+    await regexTutorItems(textTutor)
 }
 
 async function getItemsIcon(){
@@ -75,14 +80,13 @@ async function buildScriptsObjs(){
     await getTrainers()
 
     await getItemsIcon()
-    /*
     await getHiddenItems()
     await getHeldItems()
-    */
+    await getTutorItems()
     await bugFixTrainers()
 
     localStorage.setItem("trainers", LZString.compressToUTF16(JSON.stringify(trainers)))
-    localStorage.setItem("items", LZString.compressToUTF16(JSON.stringify(items)))
+    //localStorage.setItem("items", LZString.compressToUTF16(JSON.stringify(items)))
     localStorage.setItem("locations", LZString.compressToUTF16(JSON.stringify(locations)))
 }
 

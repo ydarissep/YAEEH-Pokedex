@@ -1,5 +1,5 @@
 window.repo = "PCG06/pokeyaeeh/YAEEH"
-window.checkUpdate = "7 YAEEH"
+window.checkUpdate = "8 YAEEH"
 
 
 fetch('https://raw.githubusercontent.com/ydarissep/dex-core/main/index.html').then(async response => {
