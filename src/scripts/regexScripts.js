@@ -577,7 +577,7 @@ async function regexHiddenItems(textFlags){
 
 async function regexTutorItems(textTutor){
     const lines = textTutor.split("\n")
-    let scriptName = null, move = null, zone = null
+    let scriptName = null, moveArray = [], zone = null
 
     lines.forEach(line => {
         line = line.trim()
@@ -586,29 +586,32 @@ async function regexTutorItems(textTutor){
             scriptName = line
         }
         else if(line === "end"){
-            if(scriptName && move && zone){
-                const tutorName = move.replace("MOVE_", "ITEM_TUTOR_")
-                initItem(tutorName)
-                if(!items[tutorName]["locations"]["Tutor"]){
-                    items[tutorName]["locations"]["Tutor"] = []
+            if(scriptName && moveArray.length > 0 && zone){
+                for(let i = 0; i < moveArray.length; i++){
+                    const move = moveArray[i]
+                    const tutorName = move.replace("MOVE_", "ITEM_TUTOR_")
+                    initItem(tutorName)
+                    if(!items[tutorName]["locations"]["Tutor"]){
+                        items[tutorName]["locations"]["Tutor"] = []
+                    }
+                    items[tutorName]["url"] = "https://raw.githubusercontent.com/ydarissep/dex-core/main/src/locations/sprites/Tutor.png"
+                    if(move in moves){
+                        items[tutorName]["description"] = moves[move]["description"].join("")
+                        items[tutorName]["pocket"] = "POCKET_TUTOR"
+                        items[tutorName]["url"] = `https://raw.githubusercontent.com/ydarissep/dex-core/main/sprites/TM_${moves[move]["type"]}.png`
+                    }
+                    items[tutorName]["locations"]["Tutor"].push(zone)
                 }
-                items[tutorName]["url"] = "https://raw.githubusercontent.com/ydarissep/dex-core/main/src/locations/sprites/Tutor.png"
-                if(move in moves){
-                    items[tutorName]["description"] = moves[move]["description"].join("")
-                    items[tutorName]["pocket"] = "POCKET_TUTOR"
-                    items[tutorName]["url"] = `https://raw.githubusercontent.com/ydarissep/dex-core/main/sprites/TM_${moves[move]["type"]}.png`
-                }
-                items[tutorName]["locations"]["Tutor"].push(zone)
             }
 
             scriptName = null
-            move = null
+            moveArray = []
             zone = null
         }
         else if(/MOVE_/.test(line)){
-            move = line.match(/MOVE_\w+/)[0]
+            moveArray.push(line.match(/MOVE_\w+/)[0])
         }
-        else if(scriptName && /call MoveTutor_EventScript_OpenPartyMenu/i.test(line)){
+        else if(scriptName && /MoveTutor_EventScript_OpenPartyMenu|EventScript_ConfirmMoveSelection/i.test(line)){
             zone = scriptName.match(/(\w+)_EventScript/i)[1].replaceAll("_", " ").replace(/([A-Z])/g, " $1").replace(/(\d+)/g, " $1").trim()
         }
     })
