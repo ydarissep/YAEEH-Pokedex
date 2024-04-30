@@ -534,11 +534,14 @@ function regexEvolution(textEvolution, species){
 
 
 
-        const matchEvoInfo = line.match(/(\w+), *(\w+), *(\w+)/)
+        const matchEvoInfo = line.match(/(\w+)\s*,\s*(\w+)\s*,\s*(\w+)/)
         if(matchEvoInfo){
-            const method = matchEvoInfo[1]
+            let method = matchEvoInfo[1]
             const condition = matchEvoInfo[2]
             const targetSpecies = matchEvoInfo[3]
+            if(/MAP_\w+\s*}/.test(line)){
+                method = method.replace("SPECIFIC_MAP", line.match(/(MAP_\w+)\s*}/)[1])
+            }
             species[name]["evolution"].push([method, condition, targetSpecies])
         }
     })
