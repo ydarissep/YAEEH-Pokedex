@@ -364,7 +364,7 @@ async function regexItemDescriptions(textItemDescriptions, conversionTable){
             description += line.match(/"(.*)"/)[1].replaceAll("-\\n", "").replaceAll("\\n", " ")
         }
 
-        if(/"\s*\)\s*;/.test(line) && desc){
+        if(/"\s*\)\s*;/.test(line) && conversionTable[desc]){
             conversionTable[desc].forEach(item => {
                 items[item]["description"] = description
             })
@@ -582,7 +582,7 @@ async function regexTutorItems(textTutor){
     lines.forEach(line => {
         line = line.trim()
 
-        if(/::$/.test(line)){
+        if(/::/.test(line)){
             scriptName = line
         }
         else if(line === "end"){
