@@ -183,7 +183,7 @@ async function regexTrainersParties(textTrainersParties, [conversionTable, train
                     }
                 }
                 else if(/.ability *=/i.test(line)){
-                    const matchAbility = line.match(/\w+_ABILITY/)
+                    const matchAbility = line.match(/ABILITY_\w+/)
                     if(matchAbility){
                         mon["ability"] = matchAbility[0]
                     }
