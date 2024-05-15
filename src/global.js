@@ -13,8 +13,7 @@ fetch('https://raw.githubusercontent.com/ydarissep/dex-core/main/index.html').th
     document.title = "YAEHH Dex"
     document.getElementById("footerName").innerText = "YAEEH idk something\nYdarissep Pokedex"
 
-
-    document.getElementById("speciesPanelTMHMTable").getElementsByTagName("caption")[0].innerText = "Teachable"
+    document.getElementById("speciesPanelTMHMTable").innerHTML = document.getElementById("speciesPanelTMHMTable").innerHTML.replace("TM/HM", "Teachable")
     document.getElementById("speciesPanelTutorTable").classList.add("hide")
 
 
