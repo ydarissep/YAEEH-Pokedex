@@ -1,6 +1,6 @@
 async function getStrategies(strategies){
     footerP("Fetching strategies")
-    const rawStrategies = await fetch(`https://raw.githubusercontent.com/ashytastic/Radical-Red-Pokedex/main/data/dex-strategy.md`)
+    const rawStrategies = await fetch(`https://raw.githubusercontent.com/PCG06/pokeyaeeh/YAEEH/dex_strats.txt`)
     const textStrategies = await rawStrategies.text()
 
     return regexStrategies(textStrategies, strategies)
@@ -17,7 +17,7 @@ async function buildStrategiesObj(){
     }, "3000");
 
     try{
-        //strategies = await getStrategies(strategies)
+        strategies = await getStrategies(strategies)
     }
     catch(e){
         console.log(e.message)
