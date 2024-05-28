@@ -1,5 +1,6 @@
 window.repo = "PCG06/pokeyaeeh/YAEEH"
 window.checkUpdate = "11 YAEEH"
+window.showShinyToggle = true
 
 
 fetch('https://raw.githubusercontent.com/ydarissep/dex-core/main/index.html').then(async response => {
