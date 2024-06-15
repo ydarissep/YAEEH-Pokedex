@@ -74,10 +74,15 @@ async function getSprite(species){
     return regexSprite(textSprite, spriteConversionTable, species)
 }
 
-async function getChanges(species, url){
-    const rawChanges = await fetch(url)
-    const textChanges = await rawChanges.text()
-    return regexChanges(textChanges, species)
+async function getChanges(species){
+    for(let i = 1; i <= 9; i++){
+        const rawChanges = await fetch(`https://raw.githubusercontent.com/rh-hideout/pokeemerald-expansion/master/src/data/pokemon/species_info/gen_${i}_families.h`)
+        const textChanges = await rawChanges.text()
+
+        species = regexChanges(textChanges, species)
+    }
+
+    return species
 }
 
 
@@ -93,7 +98,7 @@ async function buildSpeciesObj(){
     species = await getEvolution(species)
     species = await getForms(species) // should be called in that order until here
     species = await getBaseStats(species)
-    species = await getChanges(species, "https://raw.githubusercontent.com/rh-hideout/pokeemerald-expansion/e22ac5161723e7baf711ac66fab28c8feff2cd85/src/data/pokemon/species_info.h")
+    species = await getChanges(species)
     species = await getLevelUpLearnsets(species)
     species = await getTeachableLearnsets(species)
     species = await getEggMovesLearnsets(species)

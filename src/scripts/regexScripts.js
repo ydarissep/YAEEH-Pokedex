@@ -3,6 +3,7 @@ async function regexScripts(textScripts, tradeText, specialFunctions){
     const regexSpecialFunctions = new RegExp(Object.keys(specialFunctions).toString().replaceAll(",", "|"), "g")
 
     let scripts = textScripts.match(/data\/.*.inc/ig)
+    scripts.push("data/event_scripts.s")
     for(let i = 0, j = scripts.length; i < j; i++){
         if(/data\/maps\/.*\/scripts.inc/i.test(scripts[i])){
             scripts[i] = scripts[i].replace(/.inc$/, ".pory")
@@ -738,6 +739,9 @@ function regexScript(text, scriptPath, tradeArray, specialFunctions, regexSpecia
     if(/\s+givemon\s+|\s+giveegg\s+/i.test(text)){
         const giveMatch = Array.from(new Set(text.match(/givemon\s*SPECIES_\w+|giveegg\s*SPECIES_\w+/g)))
         for(let k = 0; k < giveMatch.length; k++){
+            if(scriptPath === "data/event_scripts.s"){
+                zone = "Mystery Gift"
+            }
             initScriptsLocations(giveMatch[k].match(/SPECIES_\w+/)[0], zone, "Gift")
         }
 

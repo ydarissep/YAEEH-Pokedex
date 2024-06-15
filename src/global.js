@@ -1,5 +1,5 @@
 window.repo = "PCG06/pokeyaeeh/YAEEH"
-window.checkUpdate = "11 YAEEH"
+window.checkUpdate = "12 YAEEH"
 window.showShinyToggle = true
 
 
