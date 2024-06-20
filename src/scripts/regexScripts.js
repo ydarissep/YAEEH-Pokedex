@@ -736,8 +736,8 @@ function regexScript(text, scriptPath, tradeArray, specialFunctions, regexSpecia
         items[itemName]["locations"]["Buy"].push(zone)
     }
 
-    if(/\s+givemon\s+|\s+giveegg\s+/i.test(text)){
-        const giveMatch = Array.from(new Set(text.match(/givemon\s*SPECIES_\w+|giveegg\s*SPECIES_\w+/g)))
+    if(/\s+givemon(?:\s+|\()|\s+giveegg(?:\s+|\()/i.test(text)){
+        const giveMatch = Array.from(new Set(text.match(/givemon\s*(?:\(\s*)?SPECIES_\w+|giveegg\s*(?:\(\s*)?SPECIES_\w+/g)))
         for(let k = 0; k < giveMatch.length; k++){
             if(scriptPath === "data/event_scripts.s"){
                 zone = "Mystery Gift"
