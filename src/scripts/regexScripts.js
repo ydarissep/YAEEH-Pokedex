@@ -700,7 +700,7 @@ function regexScript(text, scriptPath, tradeArray, specialFunctions, regexSpecia
             }
         }
 
-        const wildBattle = Array.from(new Set(text.match(/setwildbattle\w*\s*SPECIES_\w+/ig)))
+        const wildBattle = Array.from(new Set(text.match(/setwildbattle\w*\s*(?:\(\s*)?SPECIES_\w+/ig)))
         for(let k = 0; k < wildBattle.length; k++){
             initScriptsLocations(wildBattle[k].match(/SPECIES_\w+/)[0], zone, "Scripted Battle")
         }
