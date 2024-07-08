@@ -230,7 +230,7 @@ function regexChanges(textChanges, species){
             let speciesName = speciesInfo.match(/SPECIES_\w+/)[0]
             if(speciesName in  species){
                 ["baseHP", "baseAttack", "baseDefense", "baseSpeed", "baseSpAttack", "baseSpDefense"].forEach(stat => {
-                    let value = speciesInfo.match(new RegExp(`\\.${stat}\\s*=\\s*(\\d+)`, "i"))
+                    let value = speciesInfo.match(new RegExp(`\\.${stat}\\s*=.*?(\\d+)\\s*(?=:|,)`, "i"))
                     if(value){
                         value = value[1]
                         if(species[speciesName][stat] != value){
@@ -239,16 +239,19 @@ function regexChanges(textChanges, species){
                     }
                 })
 
-                const types = speciesInfo.match(/TYPE_\w+/g)
-                if(types){
-                    const type1 = types[0]
-                    const type2 = types[1] ??= type1
-
-                    if(species[speciesName]["type1"] != type1){
-                        species[speciesName]["changes"].push(["type1", type1])
-                    }
-                    if(species[speciesName]["type2"] != type2){
-                        species[speciesName]["changes"].push(["type2", type2])
+                const typesMatch = speciesInfo.match(/MON_TYPES\(TYPE_\w+(?:\s*,\s*TYPE_\w+)?/i)
+                if(typesMatch){
+                    const types = typesMatch[0].match(/TYPE_\w+/g)
+                    if(types){
+                        const type1 = types[0]
+                        const type2 = types[1] ??= type1
+    
+                        if(species[speciesName]["type1"] != type1){
+                            species[speciesName]["changes"].push(["type1", type1])
+                        }
+                        if(species[speciesName]["type2"] != type2){
+                            species[speciesName]["changes"].push(["type2", type2])
+                        }
                     }
                 }
 

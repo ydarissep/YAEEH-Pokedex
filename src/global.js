@@ -11,7 +11,7 @@ fetch('https://raw.githubusercontent.com/ydarissep/dex-core/main/index.html').th
     document.querySelector('html').innerHTML = doc.querySelector('html').innerHTML
 
 
-    document.title = "YAEHH Dex"
+    document.title = "YAEEH Dex"
     document.getElementById("footerName").innerText = "YAEEH idk something\nYdarissep Pokedex"
 
     document.getElementById("speciesPanelTMHMTable").innerHTML = document.getElementById("speciesPanelTMHMTable").innerHTML.replace("TM/HM", "Teachable")
