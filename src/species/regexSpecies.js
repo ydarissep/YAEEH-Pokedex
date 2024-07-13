@@ -145,9 +145,9 @@ function regexBaseStats(textBaseStats, species){
 
 
                     if(match === "baseHP" || match === "baseAttack" || match === "baseDefense" || match === "baseSpeed" || match === "baseSpAttack" || match === "baseSpDefense" || match === "catchRate"){
-                        const matchInt = line.match(/\d+/)
+                        const matchInt = line.match(/=.*?(\d+)\s*(?=:|,|$)/)
                         if(matchInt)
-                            value = parseInt(matchInt[0])
+                            value = parseInt(matchInt[1])
                     }
                     else if(match === "itemCommon" || match === "itemRare" || match === "eggGroup1" || match === "eggGroup2"){
                         value = line.match(/\w+_\w+/i)
