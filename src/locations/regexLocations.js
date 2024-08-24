@@ -1,72 +1,166 @@
-function regexWildLocations(jsonWildLocations, locations){
+function regexBiomes(textBiomes, locations, conversionTable){
+	const speciesBiomesMatch = textBiomes.match(/\[\s*Species\.\w+\s*,\s*Type.*?(?=\[\s*Species\.\w+\s*,\s*Type|]\s*;)/igs)
+	if(speciesBiomesMatch){
+		speciesBiomesMatch.forEach(speciesMatch => {
 
-	const wildEncounters = jsonWildLocations["wild_encounter_groups"][0]["encounters"]
-	const methodArrayWild = ["land_mons", "water_mons", "rock_smash_mons", "fishing_mons", "honey_mons"]
+			let baseSpecies = speciesMatch.match(/Species\.\w+/)[0].toUpperCase().replace(".", "_")
+			if(baseSpecies in species){
 
-	for(let i = 0; i < wildEncounters.length; i++)
-	{
-		let zone = "Placeholder"
+				const biomesMatch = speciesMatch.match(/Biome\.\w+.*?]\s*(?:,|$)/igs)
+				if(biomesMatch){
+					biomesMatch.forEach(biomeMatch => {
+						const biomeName = sanitizeString(biomeMatch.match(/Biome\.(\w+)/i)[1])
 
-		if("base_label" in wildEncounters[i]){
-			zone = wildEncounters[i]["base_label"].replace(/^g|_/g, "").replace(/Morning|Day|Evening|Night/, "").replace(/([A-Z])/g, " $1").replace(/(\d+)/g, " $1").trim()
+						let tier = biomeMatch.match(/BiomePoolTier\.(\w+)/i)
+						if(tier){
+							tier = sanitizeString(tier[1])
 
-			if(!(zone in locations)){
-				locations[zone] = {}
-			}
+							if(!(biomeName in locations)){
+								locations[biomeName] = {}
+							}
 
-			for(let j = 0; j < methodArrayWild.length; j++){
-				if(methodArrayWild[j] in wildEncounters[i]){
-					for(let k = 0; k < wildEncounters[i][methodArrayWild[j]]["mons"].length; k++){
+							if(!(tier in locations[biomeName])){
+								locations[biomeName][tier] = {}
+							}
 
-						const method = replaceMethodString(methodArrayWild[j], k, wildEncounters[i]["base_label"])
-						const name = wildEncounters[i][methodArrayWild[j]]["mons"][k]["species"]
+							let speciesName = baseSpecies
+							if(`${speciesName}${biomeName}` in conversionTable){
+								if(species[speciesName]["forms"][conversionTable[`${speciesName}${biomeName}`]]){
+									speciesName = species[speciesName]["forms"][conversionTable[`${speciesName}${biomeName}`]]
+								}
+							}
 
-						if(!(method in locations[zone])){
-							locations[zone][method] = {}
+							const timeOfDayMatch = biomeMatch.match(/TimeOfDay\.\w+/ig)
+							if(timeOfDayMatch){
+								timeOfDayMatch.forEach(timeOfDay => {
+									timeOfDay = sanitizeString(timeOfDay.match(/timeOfDay\.(\w+)/i)[1])
+									speciesName = baseSpecies
+
+									if(`${speciesName}${biomeName}` in conversionTable){
+										if(species[speciesName]["forms"][conversionTable[`${speciesName}${biomeName}`]]){
+											speciesName = species[speciesName]["forms"][conversionTable[`${speciesName}${biomeName}`]]
+										}
+									}
+
+									if(`${speciesName}${timeOfDay}` in conversionTable){
+										if(species[speciesName]["forms"][conversionTable[`${speciesName}${timeOfDay}`]]){
+											speciesName = species[speciesName]["forms"][conversionTable[`${speciesName}${timeOfDay}`]]
+										}
+									}
+
+									if(!(speciesName in locations[biomeName][tier])){
+										locations[biomeName][tier][speciesName] = [timeOfDay]
+									}
+									else{
+										locations[biomeName][tier][speciesName].push(timeOfDay)
+									}
+								})
+							}
+							else{
+								locations[biomeName][tier][speciesName] = ["All"]
+							}
 						}
-
-
-						if(name in locations[zone][method]){
-			    			locations[zone][method][name] += returnRarity(method, k)
-			    		}
-			    		else{
-			    			locations[zone][method][name] = returnRarity(method, k)
-			    		}
-
-					}
+					})
 				}
 			}
-		}
-		else{
-			console.log("missing \"base_label\" in wildEncounters[", i, "] (regexWildLocations)")
-			continue
-		}
+		})
 	}
 
+
+
+
+
+
+	const biomeLinksMatch = textBiomes.match(/const\s*biomeLinks.*?}\s*;/is)
+	if(biomeLinksMatch){
+		const biomesMatch = biomeLinksMatch[0].match(/\[\s*Biome\.\w+\s*\].*?$/igm)
+		if(biomesMatch){
+			biomesMatch.forEach(biomeMatch => {
+				const biomeNameMatch = biomeMatch.match(/\[\s*Biome\.(\w+)\s*\]/i)
+				const biomeName = sanitizeString(biomeNameMatch[1])
+
+				biomeLinks[biomeName] = []
+
+				biomeMatch = biomeMatch.replace(biomeNameMatch[0], "")
+
+				const biomeBracketMatch = biomeMatch.match(/\[\s*Biome\.\w+\s*,\s*\d+\s*\]/ig)
+				if(biomeBracketMatch){
+					biomeBracketMatch.forEach(biomeBracket => {
+						biomeLinks[biomeName].push([sanitizeString(biomeBracket.match(/Biome\.(\w+)/i)[1]), parseInt(100 / parseInt(biomeBracket.match(/,\s*(\d+)/)[1]))])
+						biomeMatch = biomeMatch.replace(biomeBracket, "")
+					})
+				}
+				let chance = 100
+				biomeLinks[biomeName].forEach(nextBiome => {
+					chance -= nextBiome[1]
+				})
+
+				const remainingBiomes = biomeMatch.match(/Biome\.(\w+)/ig)
+				if(remainingBiomes){
+					remainingBiomes.forEach(remainingBiome => {
+						biomeLinks[biomeName].push([sanitizeString(remainingBiome.match(/Biome\.(\w+)/i)[1]), parseInt(chance / remainingBiomes.length)])
+					})
+				}
+			})
+		}
+	}
 
     return locations
 }
 
 
 
-function regexGameCornerLocations(textGameCornerLocations, locations){
-	const zone = "Mauville City", method = "Game Corner"
-	
-	if(!(zone in locations)){
-		locations[zone] = {}
+
+
+
+
+async function getBiomesFormsConverionTable(textBiomesForms){
+	let conversionTable = {}
+	const textBiomesFormsMatch = textBiomesForms.match(/getSpeciesFormIndex.*?getTypeForBiome/is)
+	if(textBiomesFormsMatch){
+		let stop = false
+		let speciesArray = []
+		let biomesObj = {}
+		let currentBiome = null
+
+		const lines = textBiomesFormsMatch[0].split("\n")
+		lines.forEach(line => {
+			let speciesMatch = line.match(/Species\.\w+/i)
+			if(speciesMatch){
+				speciesMatch = speciesMatch[0].toUpperCase().replace(".", "_")
+				if(speciesMatch in species){
+					if(stop){
+						speciesArray = []
+						biomesObj = {}
+						currentBiome = null
+						stop = false
+					}
+					speciesArray.push(speciesMatch)
+				}
+			}
+			let biomeMatch = line.match(/(?:Biome|TimeOfDay)\.(\w+)/i)
+			if(biomeMatch){
+				currentBiome = sanitizeString(biomeMatch[1])
+			}
+			let intMatch = line.match(/return\s*(\d+)/i)
+			if(intMatch){
+				intMatch = parseInt(intMatch[1])
+				stop = true
+			}
+
+			if((Number.isInteger(intMatch) && currentBiome)){
+				biomesObj[currentBiome] = intMatch
+				currentBiome = null
+				speciesArray.forEach(speciesName => {
+					Object.keys(biomesObj).forEach(biome => {
+						conversionTable[`${speciesName}${biome}`] = biomesObj[biome]
+					})
+				})
+			}
+		})
 	}
 
-	if(!(method in locations[zone])){
-		locations[zone][method] = {}
-	}
-
-	const speciesArray = textGameCornerLocations.match(/SPECIES_\w+/g)
-
-	for(let i = 0; i < speciesArray.length; i++){
-		locations[zone][method][speciesArray[i]] = 100
-	}
-
-    return locations
+	return conversionTable
 }
 
 
@@ -74,126 +168,20 @@ function regexGameCornerLocations(textGameCornerLocations, locations){
 
 
 
-function replaceMethodString(method, index, zone){
-	const time = zone.match(/Morning|Day|Evening|Night/i)
-	let returnMethod
-
-	if(method.match(/fish/i)){
-		if(index >=0 && index <= 1){
-			returnMethod = "Old Rod"
-		}
-		else if(index >= 2 && index <= 4){
-			returnMethod = "Good Rod"
-		}
-		else if(index >= 5 && index <= 9){
-			returnMethod = "Super Rod"
-		}
-		else{
-			returnMethod = "Fishing"
-		}
-	}
-	else if(method.match(/water/i)){
-		returnMethod = "Surfing"
-	}
-	else if(method.match(/smash/i)){
-		returnMethod = "Rock Smash"
-	}
-	else if(method.match(/land/i)){
-		returnMethod = "Land"
-	}
-	else if(method.match(/honey/i)){
-		returnMethod = "Honey"
-	}
-    else{
-    	console.log(method, zone)
-    }
-
-	if(time){
-		return `${returnMethod} ${time[0]}`
-	}
-	else{
-		return returnMethod
-	}
-}
 
 
-function returnRarity(method, index){
-	if(/land/i.test(method)){
-		if(index === 0 || index === 1)
-			return 20
-		else if(index >= 2 && index <= 5){
-			return 10
-		}
-		else if(index >= 6 && index <= 7){
-			return 5
-		}
-		else if(index >= 8 && index <= 9){
-			return 4
-		}
-		else if(index >= 10 || index <= 11){
-			return 1
-		}
-		else
-			return 100
+
+
+
+async function getBiomesTranslationTable(textBiomesTranslation){
+	let translationTable = {}
+	const matchTranslations = textBiomesTranslation.match(/".*?"\s*:\s*".*?"/igs)
+	if(matchTranslations){
+		matchTranslations.forEach(translation => {
+			translation = translation.match(/"(.*?)"\s*:\s*"(.*?)"/)
+			translationTable[sanitizeString(translation[1])] = translation[2]
+		})
 	}
-	if(method === "Honey"){
-		if(index === 0)
-			return 50
-		else if(index >= 1 && index <= 2){
-			return 15
-		}
-		else if(index === 3){
-			return 10
-		}
-		else if(index >= 4 && index <= 5){
-			return 5
-		}
-		else
-			return 100
-	}
-	if(/surfing|rock smash/i.test(method)){
-		if(index === 0)
-			return 60
-		else if(index === 1)
-			return 30
-		else if(index === 2)
-			return 5
-		else if(index === 3)
-			return 4
-		else if(index === 4)
-			return 1
-		else
-			return 100
-	}
-	if(/old rod/i.test(method)){
-		if(index === 0)
-			return 70
-		else if(index === 1)
-			return 30
-		else 
-			return 100
-	}
-	if(/good rod/i.test(method)){
-		if(index === 2)
-			return 60
-		else if(index === 3 || index === 4)
-			return 20
-		else 
-			return 100
-	}
-	if(/super rod/i.test(method)){
-		if(index >= 5 && index <= 6)
-			return 40
-		else if(index === 7)
-			return 15
-		else if(index === 8)
-			return 4
-		else if(index === 9)
-			return 1
-		else 
-			return 100
-	}
-    else{
-        return 100
-    }
+
+	return translationTable
 }

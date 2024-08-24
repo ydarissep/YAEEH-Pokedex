@@ -1,26 +1,31 @@
-async function getWildLocations(locations){
-    footerP("Fetching wild locations")
-    const rawWildLocations = await fetch(`https://raw.githubusercontent.com/${repo}/src/data/wild_encounters.json`)
-    const jsonWildLocations = await rawWildLocations.json()
+async function getBiomes(locations){
+    footerP("Fetching biomes")
+    const rawBiomes = await fetch(`https://raw.githubusercontent.com/${repo}/src/data/biomes.ts`)
+    const textBiomes = await rawBiomes.text()
 
-    return regexWildLocations(jsonWildLocations, locations)   
-}
+    const rawBiomesForms = await fetch(`https://raw.githubusercontent.com/${repo}/src/field/arena.ts`)
+    const textBiomesForms = await rawBiomesForms.text()
 
-async function getGameCornerLocations(locations){
-    footerP("Fetching game corner locations")
-    const rawGameCornerLocations = await fetch(`https://raw.githubusercontent.com/${repo}/data/maps/MauvilleCity_GameCorner/scripts.inc`)
-    const textGameCornerLocations = await rawGameCornerLocations.text()
+    const rowBiomeTranslation = await fetch(`https://raw.githubusercontent.com/${repo}/src/locales/${lang}/biome.ts`)
+    const textBiomeTranslation = await rowBiomeTranslation.text()
 
-    return regexGameCornerLocations(textGameCornerLocations, locations)   
+    const conversionTable = await getBiomesFormsConverionTable(textBiomesForms)
+    window.biomeTranslation = await getBiomesTranslationTable(textBiomeTranslation)
+
+    localStorage.setItem("biomeTranslation", LZString.compressToUTF16(JSON.stringify(biomeTranslation)))
+
+    return regexBiomes(textBiomes, locations, conversionTable)
 }
 
 async function buildLocationsObj(){
     let locations = {}
+    window.biomeLinks = {}
 
-    locations = await getWildLocations(locations)
-    //locations = await getGameCornerLocations(locations)
+    locations = await getBiomes(locations)
 
-    await localStorage.setItem("locations", LZString.compressToUTF16(JSON.stringify(locations)))
+
+    localStorage.setItem("biomeLinks", LZString.compressToUTF16(JSON.stringify(biomeLinks)))
+    localStorage.setItem("locations", LZString.compressToUTF16(JSON.stringify(locations)))
     return locations
 }
 
@@ -30,8 +35,16 @@ async function fetchLocationsObj(){
         window.locations = await buildLocationsObj()
     }
     else{
-        window.locations = await JSON.parse(LZString.decompressFromUTF16(localStorage.getItem("locations")))   
+        window.locations = await JSON.parse(LZString.decompressFromUTF16(localStorage.getItem("locations")))
+        window.biomeLinks = await JSON.parse(LZString.decompressFromUTF16(localStorage.getItem("biomeLinks")))
+        window.biomeTranslation = await JSON.parse(LZString.decompressFromUTF16(localStorage.getItem("biomeTranslation")))
     }
+
+    Object.keys(locations).forEach(async biome => {
+        if(localStorage.getItem(biome)){
+            sprites[biome] = await LZString.decompressFromUTF16(localStorage.getItem(biome))
+        }
+    })
 
     let counter = 0
     window.locationsTracker = []
