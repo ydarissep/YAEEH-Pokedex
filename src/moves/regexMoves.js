@@ -1,177 +1,224 @@
 function regexMovesDescription(textMovesDescription, moves){
-    const movesMatch = textMovesDescription.match(/.*?:.*?\}/igs)
-    if(movesMatch){
-        movesMatch.forEach(moveMatch => {
-            const moveNameMatch = moveMatch.match(/"?\s*(\w+)\s*"?\s*:\s*{/)
-            if(moveNameMatch){
-                const moveName = `MOVE_${moveNameMatch[1].replace(/([A-Z])/g, " $1").replace(/(\d+)/g, " $1").trim().replaceAll(" ", "_").toUpperCase()}`
-                if(moveName in moves){
-                    const moveIngameNameMatch = moveMatch.match(/name:\s*"(.*?)"/i)
-                    if(moveIngameNameMatch){
-                        moves[moveName]["ingameName"] = moveIngameNameMatch[1]
-                    }
-                    const moveDescMatch = moveMatch.match(/effect\s*:\s*\W(.*?)\W\s*,?\s*(?:\n|})/i)
-                    if(moveDescMatch){
-                        moves[moveName]["description"] = moveDescMatch[1].replaceAll(/Sp\s*\./ig, "Sp").replaceAll("\\n", "").replaceAll(/\.+/g, ".ceciEstUnPoint").split("ceciEstUnPoint")
-                        moves[moveName]["description"] = moves[moveName]["description"].filter(desc => desc.trim() !== "")
+    const lines = textMovesDescription.split("\n")
+    let conversionTable = {}, descriptionFound = false, conversionDescription = undefined
+
+    lines.forEach(line => { // first go to get conversionTable
+        const matchMoves = line.match(/\[ *(MOVE_\w+).*\]/i)
+        if(matchMoves){
+            const move = matchMoves[1]
+
+
+            const matchConversionDescription = line.match(/s\w+Description/i)
+            if(matchConversionDescription){
+                const conversionDescription = matchConversionDescription[0]
+
+                if(conversionTable[conversionDescription] === undefined)
+                    conversionTable[conversionDescription] = [move]
+                else
+                    conversionTable[conversionDescription].push(move)
+            }
+        }
+    })
+
+    lines.forEach(line => { // second go with conversionTable
+        const matchConversionDescription = line.match(/static *const *u\d+ *(s\w+Description) *\[ *\]/i)
+        if(matchConversionDescription && conversionDescription !== matchConversionDescription[1]){
+            conversionDescription = matchConversionDescription[1]
+
+            descriptionFound = true
+        }
+
+        if(descriptionFound === true){
+            const matchDescription = line.match(/"(.*)"/i)
+            if(matchDescription){
+                const description = matchDescription[1].replaceAll("\\n", " ")
+
+                if(conversionTable[conversionDescription] !== undefined){
+                    for(let i = 0; i < conversionTable[conversionDescription].length; i++){
+                        moves[conversionTable[conversionDescription][i]]["description"].push(description)
                     }
                 }
             }
-        })
-    }
+        }
+
+        if(line.match(";"))
+            descriptionFound = false
+
+    })
 
     return moves
 }
 
 
 function regexMoves(textMoves, moves){
-    let flagArray = ["unimplemented","partial"]
-    const flagsMatch = textMoves.match(/this.setFlag\s*\(\s*MoveFlags\.\w+\s*,\s*\w+\s*\)/ig)
-    if(flagsMatch){
-        flagsMatch.forEach(flagMatch => {
-            const flag = flagMatch.match(/this.setFlag\s*\(\s*MoveFlags\.\w+\s*,\s*(\w+)\s*\)/i)[1]
-            if(flag !== "true" && flag !== "false"){
-                flagArray.push(flag)
+    const lines = textMoves.split("\n")
+    let move = null, change = false
+
+    lines.forEach(line => {
+
+        const matchMoves = line.match(/\[ *(MOVE_\w+) *\]/i)
+        if(matchMoves){
+            move = matchMoves[1]
+            
+            moves[move] = {}
+            moves[move]["name"] = move
+            moves[move]["changes"] = []
+            moves[move]["description"] = []
+            moves[move]["ingameName"] = sanitizeString(move)
+        }
+        if(line.includes("#if"))
+            rebalanced = true
+        else if(line.includes("#el") && rebalanced === true){
+            rebalanced = false
+            change = true
+        }
+        else if(line.includes("#endif") && change === true)
+            change = false
+
+
+        if(line.includes(".power")){
+            const matchPower = line.match(/\d+/)
+            if(matchPower){
+                const power = matchPower[0]
+
+                moves[move] = setMove(moves[move], change, "power", power)
             }
-        })
+        }
+        else if(line.includes(".pp")){
+            const matchPP = line.match(/\d+/)
+            if(matchPP){
+                const PP = matchPP[0]
+
+                moves[move] = setMove(moves[move], change, "PP", PP)
+            }
+        }
+        else if(line.includes(".type")){
+            const matchType = line.match(/TYPE_\w+/i)
+            if(matchType){
+                const type = matchType[0]
+
+                moves[move] = setMove(moves[move], change, "type", type)
+            }
+        }
+        else if(line.includes(".accuracy")){
+            const matchAccuracy = line.match(/\d+/)
+            if(matchAccuracy){
+                const accuracy = matchAccuracy[0]
+
+                moves[move] = setMove(moves[move], change, "accuracy", accuracy)
+            }
+        }
+        else if(line.includes(".split")){
+            const matchSplit = line.match(/SPLIT_\w+/i)
+            if(matchSplit){
+                const split = matchSplit[0]
+
+                moves[move] = setMove(moves[move], change, "split", split)
+            }
+        }
+        else if(line.includes(".effect")){
+            const matchEffect = line.match(/EFFECT_\w+/i)
+            if(matchEffect){
+                const effect = matchEffect[0]
+
+                moves[move] = setMove(moves[move], change, "effect", effect)
+            }
+        }
+        else if(line.includes(".secondaryEffectChance")){
+            const matchChance = line.match(/\d+/)
+            if(matchChance){
+                const chance = matchChance[0]
+
+                moves[move] = setMove(moves[move], change, "chance", chance)
+            }
+        }
+        else if(line.includes(".target")){
+            const matchTarget = line.match(/MOVE_TARGET_\w+/i)
+            if(matchTarget){
+                const target = matchTarget[0]
+
+                moves[move] = setMove(moves[move], change, "target", target)
+            }
+        }
+        else if(/..*?= *TRUE/i.test(line)){
+            const matchFlags = line.match(/.(\w+).*?= *TRUE/i)
+            if(matchFlags){
+                const flag = matchFlags[1].replace(/([A-Z])/g, " $1").replace(/(\d+)/g, " $1").trim()
+
+                if(!moves[move]["flags"]){
+                    moves[move]["flags"] = []
+                }
+                moves[move]["flags"].push(flag)
+            }
+        }
+        else if(line.includes(".priority")){
+            const matchPriority = line.match(/-?\d+/)
+            if(matchPriority){
+                const priority = matchPriority[0]
+                if(priority >= 50)
+                    priority -= 256
+
+                moves[move] = setMove(moves[move], change, "priority", priority)
+            }
+        }
+    })
+
+    return normalizeMoves(moves)
+}
+
+
+
+
+
+function setMove(move, change, input, output){
+    if(change){
+        move["changes"].push([input, output])
+        return move
     }
+    else{
+       if(move[input] === undefined){
+            move[input] = output
+            return move
+       }
+    }
+    return move
+}
 
-    const textMovesMatch = textMoves.match(/new\s*\w+Move\(Moves\.\w+.*?(?=new\s*\w+Move\(Moves\.|$)/igs)
-    if(textMovesMatch){
-        textMovesMatch.forEach(moveMatch => {
-            const moveName = moveMatch.match(/Moves\.\w+/i)[0].toUpperCase().replace("MOVES.", "MOVE_").replaceAll(/_+/g, "_")
 
-            moves[moveName] = {}
-            moves[moveName]["name"] = moveName
-            moves[moveName]["ingameName"] = sanitizeString(moveName)
-            initMove(moves[moveName])
+function normalizeMoves(moves){
 
-            const split = moveMatch.match(/MoveCategory\.\w+/i)
-            let stats = null
-            if(split){
-                moves[moveName]["split"] = split[0].toUpperCase().replace("MOVECATEGORY.", "SPLIT_")
-                stats = moveMatch.match(/(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)/)
-                if(stats){
-                    moves[moveName]["power"] = parseInt(stats[1])
-                    moves[moveName]["accuracy"] = parseInt(stats[2])
-                    moves[moveName]["PP"] =  parseInt(stats[3])
-                    moves[moveName]["chance"] = parseInt(stats[4])
-                    moves[moveName]["priority"] = parseInt(stats[5])
-                }
-                if(moves[moveName]["split"] === "SPLIT_PHYSICAL" && !/makesContact\(\s*false/i.test(moveMatch)){
-                    moves[moveName]["flags"].push("FLAG_MAKES_CONTACT")
-                }
-            }
-            else{
-                moves[moveName]["split"] = "SPLIT_STATUS"
-                stats = moveMatch.match(/(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)/)
-                if(stats){
-                    moves[moveName]["power"] = 0
-                    moves[moveName]["accuracy"] = parseInt(stats[1])
-                    moves[moveName]["PP"] =  parseInt(stats[2])
-                    moves[moveName]["chance"] = parseInt(stats[3])
-                    moves[moveName]["priority"] = parseInt(stats[4])
-                }
-            }
+    for (const move of Object.keys(moves)){
 
-            const target = moveMatch.match(/MoveTarget\.\w+/i)
-            if(target){
-                moves[moveName]["target"] = target[0].toUpperCase().replace("MOVETARGET.", "MOVE_TARGET_")
-            }
+        if(moves[move]["power"] === undefined)
+            moves[move]["power"] = 0
 
-            const type = moveMatch.match(/Type\.\w+/i)
-            if(type){
-                moves[moveName]["type"] = type[0].toUpperCase().replace(".", "_")
-            }
+        if(moves[move]["PP"] === undefined)
+            moves[move]["PP"] = 0
 
-            const flags = moveMatch.match(/\.\w+\(\)/g)
-            if(flags){
-                flags.forEach(flag => {
-                    const flagName = flag.match(/\w+/)[0]
-                    if(flagArray.includes(flagName)){
-                        moves[moveName]["flags"].push(`FLAG_${flagName.replace(/([A-Z])/g, " $1").replace(/(\d+)/g, " $1").trim().replaceAll(" ", "_").toUpperCase()}`)
-                    }
-                })
-            }
-            if(/.attr\s*\(\s*HighCritAttr/i.test(moveMatch)){
-                moves[moveName]["flags"].push("FLAG_HIGH_CRIT")
-            }
+        if(moves[move]["type"] === undefined)
+            moves[move]["type"] = ""
 
-            let effect = "EFFECT"
-            const status = moveMatch.match(/\(\s*StatusEffectAttr\s*,\s*StatusEffect.(\w+)\)/i)
-            if(status){
-                effect = `${effect}_${status[1].toUpperCase()}`
-            }
-            const flinch = moveMatch.match(/.attr\(\s*FlinchAttr\s*\)/i)
-            if(flinch){
-                effect = `${effect}_FLINCH`
-            }
-            const confuse = moveMatch.match(/.attr\(\s*ConfuseAttr\s*\)/i)
-            if(confuse){
-                effect = `${effect}_CONFUSE`
-            }
-            const statsChangeMatch = moveMatch.match(/.attr\(\s*StatChangeAttr.*?\)/ig)
-            if(statsChangeMatch){
-                statsChangeMatch.forEach(statsChange => {
-                    let string = ""
-                    const intMatch = statsChange.match(/-?\d+/)
-                    if(intMatch){
-                        const statsMatch = statsChange.match(/BattleStat\.(?:HP|ATK|DEF|SPATK|SPDEF|SPD|ACC)\s*(?:,|\)|\])/ig)
-                        if(statsMatch){
-                            const change = parseInt(intMatch[0])
-                            if(change > 0){
-                                string = "UP"
-                            }
-                            else if(change < 0){
-                                string = "LOWER"
-                            }
-                            statsMatch.forEach(stat => {
-                                string = `${string}_${stat.match(/BattleStat\.(HP|ATK|DEF|SPATK|SPDEF|SPD|ACC)\s*(?:,|\)|\])/)[1]}`
-                            })
-                            string = `${string}_${Math.abs(change)}`
-                            effect = `${effect}_${string}`
-                        }
-                    }
-                })
-            }
-            if(effect !== "EFFECT" && lang === "en"){
-                moves[moveName]["effect"] = effect
-            }
+        if(moves[move]["accuracy"] === undefined)
+            moves[move]["accuracy"] = 0
 
-            validateMove(moves, moveName)
-        })
+        if(moves[move]["split"] === undefined)
+            moves[move]["split"] = ""
+
+        if(moves[move]["chance"] === undefined)
+            moves[move]["chance"] = ""
+
+        if(moves[move]["chance"] === undefined)
+            moves[move]["chance"] = 0
+
+        if(moves[move]["target"] === undefined)
+            moves[move]["target"] = ""
+
+        if(moves[move]["flags"] === undefined)
+            moves[move]["flags"] = []
+
+        if(moves[move]["priority"] === undefined)
+            moves[move]["priority"] = 0
     }
 
     return moves
-}
-
-
-
-
-function initMove(moveObj){
-    moveObj["PP"] = null
-    moveObj["accuracy"] = null
-    moveObj["chance"] = 0
-    moveObj["changes"] = []
-    moveObj["description"] = []
-    moveObj["effect"] = ""
-    moveObj["flags"] = []
-    moveObj["power"] = null
-    moveObj["priority"] = null
-    moveObj["target"] = ""
-    moveObj["type"] = null
-}
-
-
-
-
-
-
-function validateMove(moves, moveName){
-    const moveObj = moves[moveName]
-    if(moveObj["PP"] == null || moveObj["accuracy"] == null || moveObj["power"] == null || moveObj["priority"] == null || moveObj["type"] == null){
-        if(moveName !== "MOVE_NONE"){
-            delete(moves[moveName])
-        }
-    }
 }

@@ -1,3 +1,19 @@
+async function getScripts(){
+    footerP("Fetching scripts")
+    const rawScripts = await fetch(`https://raw.githubusercontent.com/${repo}/data/event_scripts.s`)
+    const textScripts = await rawScripts.text()
+
+    const rawTrade = await fetch(`https://raw.githubusercontent.com/${repo}/src/data/trade.h`)
+    const tradeText = await rawTrade.text()
+
+    const rawSpecials = await fetch(`https://raw.githubusercontent.com/${repo}/src/field_specials.c`)
+    const textSpecials = await rawSpecials.text()
+
+    await getItemBallSripts(textScripts)
+
+    await regexScripts(textScripts, tradeText, await regexSpecialsFunctions(textSpecials))
+}
+
 async function getItems(){
     footerP("Fetching items")
     const rawItems = await fetch(`https://raw.githubusercontent.com/${repo}/src/data/items.h`)
@@ -9,6 +25,27 @@ async function getItems(){
     const textItemDescriptions = await rawItemDescriptions.text()
 
     await regexItemDescriptions(textItemDescriptions, descriptionConversionTable)
+}
+
+async function getItemBallSripts(textScripts){
+    const rawItemBallSripts = await fetch(`https://raw.githubusercontent.com/${repo}/data/scripts/item_ball_scripts.inc`)
+    const textItemBallScripts = await rawItemBallSripts.text()
+
+    await regexItemBallSripts(textItemBallScripts, textScripts)
+}
+
+async function getHiddenItems(){
+    const rawFlags = await fetch(`https://raw.githubusercontent.com/${repo}/include/constants/flags.h`)
+    const textFlags = await rawFlags.text()
+
+    await regexHiddenItems(textFlags)
+}
+
+async function getTutorItems(){
+    const rawTutor = await fetch(`https://raw.githubusercontent.com/${repo}/data/scripts/move_tutors.inc`)
+    const textTutor = await rawTutor.text()
+
+    await regexTutorItems(textTutor)
 }
 
 async function getItemsIcon(){
@@ -23,39 +60,34 @@ async function getItemsIcon(){
 
 async function getTrainers(){
     footerP("Fetching trainers")
-    const rawTrainers = await fetch(`https://raw.githubusercontent.com/${repo}/src/data/trainer-config.ts`)
+    const rawTrainers = await fetch(`https://raw.githubusercontent.com/${repo}/src/data/trainers.h`)
     const textTrainers = await rawTrainers.text()
 
-    await regexTrainersParties(textTrainers)
-}
+    const rawTrainersParties = await fetch(`https://raw.githubusercontent.com/${repo}/src/data/trainer_parties.h`)
+    const textTrainersParties = await rawTrainersParties.text()
 
-async function getTranslationTable(){
-    footerP("Fetching translation table")
-    const rawPokemonInfo = await fetch(`https://raw.githubusercontent.com/${repo}/src/locales/${lang}/pokemon-info.ts`)
-    const textPokemonInfo = await rawPokemonInfo.text()
-
-    await regexPokemonInfo(textPokemonInfo)
+    await regexTrainersParties(textTrainersParties, await regexTrainers(textTrainers))
 }
 
 async function buildScriptsObjs(){
     window.trainers = {}
     window.items = {}
-    window.translationTable = {}
 
-    await getTranslationTable()
-
-    //await getTrainers()
-
-    /*
     await getItems()
 
-    await getItemsIcon()
-    */
+    await getScripts()
 
-    localStorage.setItem("translationTable", LZString.compressToUTF16(JSON.stringify(translationTable)))
+    await getTrainers()
+
+    await getItemsIcon()
+    await getHiddenItems()
+    await getHeldItems()
+    await getTutorItems()
+    await bugFixTrainers()
+
     localStorage.setItem("trainers", LZString.compressToUTF16(JSON.stringify(trainers)))
     localStorage.setItem("items", LZString.compressToUTF16(JSON.stringify(items)))
-    //localStorage.setItem("locations", LZString.compressToUTF16(JSON.stringify(locations)))
+    localStorage.setItem("locations", LZString.compressToUTF16(JSON.stringify(locations)))
 }
 
 
@@ -64,9 +96,8 @@ async function fetchScripts(){
         await buildScriptsObjs()
     }
     else{
-        window.items = await JSON.parse(LZString.decompressFromUTF16(localStorage.getItem("items")))
-        window.trainers = await JSON.parse(LZString.decompressFromUTF16(localStorage.getItem("trainers")))
-        window.translationTable = await JSON.parse(LZString.decompressFromUTF16(localStorage.getItem("translationTable")))
+        window.items = await JSON.parse(LZString.decompressFromUTF16(localStorage.getItem("items")))   
+        window.trainers = await JSON.parse(LZString.decompressFromUTF16(localStorage.getItem("trainers")))   
     }
     
 
@@ -161,7 +192,7 @@ function getItemSpriteSrc(itemName){
 
 
 function getTrainerSpriteSrc(trainerSprite){
-    const url = `https://raw.githubusercontent.com/${repo}/graphics/trainers/front_pics/${trainerSprite.replace(/^TRAINER_PIC_/, "").toLowerCase()}_front_pic.png`
+    const url = `https://raw.githubusercontent.com/${repo}/graphics/trainers/front_pics/${trainerSprite.replace(/^TRAINER_PIC_/, "").toLowerCase()}.png`
     if(sprites[trainerSprite]){
         if(sprites[trainerSprite].length < 500){
             localStorage.removeItem(trainerSprite)
@@ -176,4 +207,91 @@ function getTrainerSpriteSrc(trainerSprite){
         spriteRemoveTrainerBgReturnBase64(trainerSprite, url)
         return url
     }
+}
+
+
+
+
+
+
+
+async function bugFixTrainers(){
+    let trainerToZone = {}
+    let stop = false
+    let correctZone = false
+    Object.keys(trainers).forEach(zone => {
+        Object.keys(trainers[zone]).forEach(trainer => {
+            if(!trainerToZone[trainer]){
+                trainerToZone[trainer] = zone
+            }
+            else{
+                const baseTrainerName = trainer.split("_").splice(0, 2).join("_")
+                const fullTrainerName = trainer.split("_").slice(0, -1).join("_")
+                Object.keys(trainers[zone]).forEach(trainerName => {
+                    if(trainerName.split("_").splice(0, 2).join("_") == baseTrainerName && trainerName.split("_").slice(0, -1).join("_") != fullTrainerName){
+                        correctZone = trainerToZone[trainer]
+                        stop = true
+                    }
+                })
+                if(!stop){
+                    Object.keys(trainers[trainerToZone[trainer]]).forEach(trainerName => {
+                        if(trainerName.split("_").splice(0, 2).join("_") == baseTrainerName && trainerName.split("_").slice(0, -1).join("_") != fullTrainerName){
+                            correctZone = zone
+                        }
+                    })
+                }
+                stop = false
+            }
+
+
+            if(correctZone){
+                if(correctZone === zone){
+                    if(Object.keys(trainers[zone][trainer]["party"]).length === 0){
+                        trainers[zone][trainer] = JSON.parse(JSON.stringify(trainers[trainerToZone[trainer]][trainer]))
+                        delete trainers[trainerToZone[trainer]][trainer]
+                    }
+                }
+                else{
+                    if(Object.keys(trainers[trainerToZone[trainer]][trainer]["party"]).length === 0){
+                        trainers[trainerToZone[trainer]][trainer] = JSON.parse(JSON.stringify(trainers[zone][trainer]))
+                        delete trainers[zone][trainer]
+                    }
+                }
+                correctZone = false
+            }
+        })
+    })
+
+
+
+
+
+
+    Object.keys(trainers).forEach(zone => {
+        let rematchObj = {}
+        let sortedZoneObj = {}
+        Object.keys(trainers[zone]).sort(function(a, b) {
+            return (a < b) ? -1 : (a > b) ? 1 : 0
+        }).forEach(trainer => {
+            sortedZoneObj[trainer] = trainers[zone][trainer]
+        })
+        trainers[zone] = JSON.parse(JSON.stringify(sortedZoneObj))
+
+        Object.keys(trainers[zone]).forEach(trainer => {
+            if(trainers[zone][trainer]["rematch"]){
+                rematchObj[trainer.split("_").slice(0, -1).join("_")] = trainers[zone][trainer]["rematch"]
+            }
+            else if(rematchObj[trainer.split("_").slice(0, -1).join("_")] && !trainers[zone][trainer]["rematch"]){
+                trainers[zone][trainer]["rematch"] = rematchObj[trainer.split("_").slice(0, -1).join("_")]
+                trainers[zone][rematchObj[trainer.split("_").slice(0, -1).join("_")]]["rematchArray"].push(trainer)
+
+            }
+            if(Object.keys(trainers[zone][trainer]["party"]).length === 0){
+                delete trainers[zone][trainer]
+                if(Object.keys(trainers[zone]).length === 0){
+                    delete trainers[zone]
+                }
+            }
+        })
+    })
 }

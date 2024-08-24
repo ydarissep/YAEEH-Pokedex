@@ -1,47 +1,55 @@
 function regexAbilities(textAbilities, abilities){
-    const abilitiesMatch = textAbilities.match(/.*?:.*?\}/igs)
-    if(abilitiesMatch){
-        abilitiesMatch.forEach(abilityMatch => {
-            const abilityNameMatch = abilityMatch.match(/"?(\w+)"?\s*:\s*{/)
-            if(abilityNameMatch){
-                const abilityName = `ABILITY_${abilityNameMatch[1].replace(/([A-Z])/g, " $1").replace(/(\d+)/g, " $1").trim().replaceAll(" ", "_").toUpperCase()}`
-                abilities[abilityName] = {}
-                abilities[abilityName]["name"] = abilityName
-                abilities[abilityName]["ingameName"] = sanitizeString(abilityName)
-                abilities[abilityName]["flags"] = []
+    const lines = textAbilities.split("\n")
+    let conversionTable = {}
 
-                const abilityIngameNameMatch = abilityMatch.match(/name:\s*"(.*?)"/i)
-                if(abilityIngameNameMatch){
-                    abilities[abilityName]["ingameName"] = abilityIngameNameMatch[1]
-                }
-                const abilityDescMatch = abilityMatch.match(/description\s*:\s*\W(.*?)\W\s*,?\s*(?:\n|})/i)
-                if(abilityDescMatch){
-                    abilities[abilityName]["description"] = abilityDescMatch[1].replaceAll("\\n", " ")
+    for(let i = lines.length - 1; i >= 0; i--){
+        let ability = lines[i].match(/(ABILITY_\w+)/i) //this is going to get confusing real quick :)
+        if(ability){
+            ability = ability[0]
+
+
+            if(abilities[ability] === undefined){
+                abilities[ability] = {}
+                abilities[ability]["name"] = ability
+            }
+            
+
+            const matchAbilityIngameName = lines[i].match(/_ *\( *" *(.*)" *\) *,/i)
+            if(matchAbilityIngameName){
+                const abilityIngameName = matchAbilityIngameName[1]
+
+                abilities[ability]["ingameName"] = abilityIngameName
+            }
+        }
+
+
+        const matchConversionDescription = lines[i].match(/s\w+Description/i)
+        if(matchConversionDescription){
+            const conversionDescription = matchConversionDescription[0]
+
+
+
+            if(ability){ // :=)
+
+
+                if(conversionTable[conversionDescription] === undefined)
+                    conversionTable[conversionDescription] = [ability]
+                else
+                    conversionTable[conversionDescription].push(ability)
+
+
+            }
+            else{
+                const matchDescription = lines[i].match(/_ *\( *" *(.*)" *\) *;/i)
+                if(matchDescription){
+                    const description = matchDescription[1]
+                    if(conversionTable[conversionDescription] !== undefined){
+                        for(let j = 0; j < conversionTable[conversionDescription].length; j++)
+                        abilities[conversionTable[conversionDescription][j]]["description"] = description
+                    }
                 }
             }
-        })
+        }
     }
-
-    return abilities
-}
-
-
-
-
-
-function regexAbilitiesFlags(textAbilitiesFlags, abilities){
-    const textAbilitiesFlagsMatch = textAbilitiesFlags.match(/new\s*Ability\s*\(\s*Abilities\.\w+.*?(?=new\s*Ability\s*\(\s*Abilities\.\w+|\)\s*;)/igs)
-    if(textAbilitiesFlagsMatch){
-        textAbilitiesFlagsMatch.forEach(abilityMatch => {
-            const abilityName = abilityMatch.match(/Abilities\.\w+/i)[0].toUpperCase().replace("ABILITIES.", "ABILITY_")
-            if(abilityName in abilities){
-                const flagMatch = abilityMatch.match(/\.partial|\.unimplemented/i)
-                if(flagMatch){
-                    abilities[abilityName]["flags"].push(`FLAG_${flagMatch[0].replace(".", "").toUpperCase()}`)
-                }
-            }
-        })
-    }
-    
     return abilities
 }
