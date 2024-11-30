@@ -21,7 +21,28 @@ async function regexScripts(textScripts, tradeText, specialFunctions){
 
 
 
-async function regexTrainers(textTrainers){
+
+function getTrainerSpriteConversionTable(textGraphicsTrainers){
+    let trainerSpriteconversionTable = {}
+    textGraphicsTrainers.match(/TRAINER_SPRITE\(.*?\)/g).forEach(trainerSpriteMatch => {
+        const conversionMatch = trainerSpriteMatch.match(/(\w+)\s*,\s*(\w+)/)
+        if(conversionMatch){
+            const spritePathMatch = textGraphicsTrainers.match(new RegExp(`gTrainerFrontPic_${conversionMatch[2]}.*?graphics\\/trainers\\/front_pics\\/(.*?)\\.`))
+            if(spritePathMatch){
+                trainerSpriteconversionTable[`TRAINER_PIC_${conversionMatch[1]}`] = spritePathMatch[1]
+            }
+        }
+    })
+
+    return trainerSpriteconversionTable
+}
+
+
+
+
+
+
+async function regexTrainers(textTrainers, trainerSpriteconversionTable){
     const lines = textTrainers.split("\n")
     let comment = false, trainer = null, zone = null, conversionTable = {}, trainerToZone = {}
 
@@ -84,7 +105,9 @@ async function regexTrainers(textTrainers){
                 if(/.trainerPic *=/i.test(line)){
                     const matchTrainerPic = line.match(/TRAINER_PIC_\w+/i)
                     if(matchTrainerPic){
-                        trainers[zone][trainer]["sprite"] = matchTrainerPic[0]
+                        if(trainerSpriteconversionTable[matchTrainerPic[0]]){
+                            trainers[zone][trainer]["sprite"] = trainerSpriteconversionTable[matchTrainerPic[0]]
+                        }
                     }
                 }
                 else if(/.trainerName *=/i.test(line)){

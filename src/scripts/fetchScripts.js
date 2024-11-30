@@ -63,10 +63,15 @@ async function getTrainers(){
     const rawTrainers = await fetch(`https://raw.githubusercontent.com/${repo}/src/data/trainers.h`)
     const textTrainers = await rawTrainers.text()
 
+    const rawGraphicsTrainers = await fetch(`https://raw.githubusercontent.com/${repo}/src/data/graphics/trainers.h`)
+    const textGraphicsTrainers = await rawGraphicsTrainers.text()
+
+    const trainerSpriteconversionTable = getTrainerSpriteConversionTable(textGraphicsTrainers)
+
     const rawTrainersParties = await fetch(`https://raw.githubusercontent.com/${repo}/src/data/trainer_parties.h`)
     const textTrainersParties = await rawTrainersParties.text()
 
-    await regexTrainersParties(textTrainersParties, await regexTrainers(textTrainers))
+    await regexTrainersParties(textTrainersParties, await regexTrainers(textTrainers, trainerSpriteconversionTable))
 }
 
 async function buildScriptsObjs(){
@@ -154,7 +159,7 @@ async function fetchScripts(){
                 sprites[sprite] = LZString.decompressFromUTF16(localStorage.getItem(sprite))
                 if(sprites[sprite].length < 500){
                     localStorage.removeItem(sprite)
-                    spriteRemoveBgReturnBase64(sprite, `https://raw.githubusercontent.com/${repo}/graphics/trainers/front_pics/${sprite.replace(/^TRAINER_PIC_/, "").toLowerCase()}_front_pic.png`)
+                    spriteRemoveBgReturnBase64(sprite, `https://raw.githubusercontent.com/${repo}/graphics/trainers/front_pics/${sprite}.png`)
                 }
             }
         })
@@ -192,7 +197,7 @@ function getItemSpriteSrc(itemName){
 
 
 function getTrainerSpriteSrc(trainerSprite){
-    const url = `https://raw.githubusercontent.com/${repo}/graphics/trainers/front_pics/${trainerSprite.replace(/^TRAINER_PIC_/, "").toLowerCase()}.png`
+    const url = `https://raw.githubusercontent.com/${repo}/graphics/trainers/front_pics/${trainerSprite}.png`
     if(sprites[trainerSprite]){
         if(sprites[trainerSprite].length < 500){
             localStorage.removeItem(trainerSprite)
